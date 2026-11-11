@@ -2,22 +2,22 @@
 # This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Guzmandrade AI Chatbot 1.1.1\n"
+"Project-Id-Version: Guzmandrade AI Chatbot 1.2.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/guzmandrade-ai-chatbot\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-02T17:07:01+00:00\n"
+"POT-Creation-Date: 2026-11-11T21:22:03+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 3.0.0-alpha-6a3afd3\n"
 "X-Domain: guzmandrade-ai-chatbot\n"
 
 #. Plugin Name of the plugin
 #: guzmandrade-ai-chatbot.php:3
-#: includes/class-gaic-settings.php:103
 #: includes/class-gaic-settings.php:104
+#: includes/class-gaic-settings.php:105
 msgid "Guzmandrade AI Chatbot"
 msgstr ""
 
@@ -46,78 +46,99 @@ msgid "Captcha verification required. Please complete the challenge."
 msgstr ""
 
 #: includes/class-gaic-captcha.php:86
-#: includes/class-gaic-chatbot.php:210
+#: includes/class-gaic-chatbot.php:220
 msgid "Captcha verification failed. Please try again."
 msgstr ""
 
-#: includes/class-gaic-chatbot.php:192
+#: includes/class-gaic-chatbot.php:202
 #: includes/class-gaic-settings.php:41
 msgid "Chat with us"
 msgstr ""
 
-#: includes/class-gaic-chatbot.php:194
+#: includes/class-gaic-chatbot.php:204
 #: includes/class-gaic-settings.php:45
 msgid "Hello! How can I help you today?"
 msgstr ""
 
-#: includes/class-gaic-chatbot.php:201
+#: includes/class-gaic-chatbot.php:211
 msgid "Type your message…"
 msgstr ""
 
-#: includes/class-gaic-chatbot.php:202
+#: includes/class-gaic-chatbot.php:212
 msgid "Send"
 msgstr ""
 
-#: includes/class-gaic-chatbot.php:203
+#: includes/class-gaic-chatbot.php:213
 msgid "Open chat"
 msgstr ""
 
-#: includes/class-gaic-chatbot.php:204
+#: includes/class-gaic-chatbot.php:214
 msgid "Close chat"
 msgstr ""
 
-#: includes/class-gaic-chatbot.php:205
+#: includes/class-gaic-chatbot.php:215
 msgid "Assistant is typing…"
 msgstr ""
 
-#: includes/class-gaic-chatbot.php:206
+#: includes/class-gaic-chatbot.php:216
 msgid "Something went wrong. Please try again."
 msgstr ""
 
-#: includes/class-gaic-chatbot.php:207
+#: includes/class-gaic-chatbot.php:217
 msgid "Your message was blocked. Please try again later."
 msgstr ""
 
-#: includes/class-gaic-chatbot.php:208
+#: includes/class-gaic-chatbot.php:218
 msgid "The AI assistant is not configured. Please contact the site administrator."
 msgstr ""
 
-#: includes/class-gaic-chatbot.php:209
+#: includes/class-gaic-chatbot.php:219
 msgid "Please complete the captcha challenge first."
 msgstr ""
 
-#: includes/class-gaic-chatbot.php:339
+#: includes/class-gaic-chatbot.php:221
+msgid "Sources"
+msgstr ""
+
+#: includes/class-gaic-chatbot.php:350
 msgid "The AI assistant is not configured."
 msgstr ""
 
-#: includes/class-gaic-chatbot.php:460
-#: includes/class-gaic-chatbot.php:469
+#: includes/class-gaic-chatbot.php:470
+#: includes/class-gaic-chatbot.php:479
 msgid "Failed to generate a response. Please try again."
 msgstr ""
 
-#: includes/class-gaic-chatbot.php:558
-#: includes/class-gaic-chatbot.php:569
+#: includes/class-gaic-chatbot.php:646
 msgid "I've saved your information. Is there anything else I can help you with?"
+msgstr ""
+
+#: includes/class-gaic-citations.php:76
+msgid "Cite the knowledge base sources used in your answer. Call this function whenever your answer uses information from one of the numbered context sources, passing the numbers of those sources. Only cite sources that appear in the context."
+msgstr ""
+
+#. translators: %d: number of context sources.
+#: includes/class-gaic-citations.php:105
+#, php-format
+msgid ""
+"\n"
+"\n"
+"## Citations\n"
+"The knowledge base context above lists sources numbered [1] to [%d]. Whenever your answer uses information from a source, call the cite_sources function with that source's number, and also reference it in your text as [n] — for example: \"Refunds are processed within 5-7 business days [1].\" Only cite sources that appear in the context."
+msgstr ""
+
+#: includes/class-gaic-citations.php:151
+msgid "Sources recorded. Now write the final answer to the user, referencing the sources in your text as [n]."
 msgstr ""
 
 #: includes/class-gaic-knowledge-base.php:47
 #: includes/class-gaic-knowledge-base.php:58
-#: includes/class-gaic-settings.php:285
+#: includes/class-gaic-settings.php:286
 msgid "Knowledge Base"
 msgstr ""
 
 #: includes/class-gaic-knowledge-base.php:48
-#: includes/class-gaic-settings.php:499
+#: includes/class-gaic-settings.php:514
 msgid "Knowledge Base Article"
 msgstr ""
 
@@ -218,19 +239,19 @@ msgid "Source: "
 msgstr ""
 
 #. translators: %s: Link to the AI plugin.
-#: includes/class-gaic-plugin.php:130
+#: includes/class-gaic-plugin.php:139
 #, php-format
 msgid "Guzmandrade AI Chatbot needs the WordPress AI building blocks to function. Please install and activate the <a href=\"%s\">AI plugin</a> or upgrade to WordPress 7.0+. Then configure an AI provider under <strong>Settings &rsaquo; Connectors</strong>."
 msgstr ""
 
 #. translators: %s: Link to Akismet.
-#: includes/class-gaic-plugin.php:147
+#: includes/class-gaic-plugin.php:156
 #, php-format
 msgid "Guzmandrade AI Chatbot recommends <a href=\"%s\">Akismet</a> for spam protection. Install and activate it to enable spam filtering on chat messages. Rate-limiting fallback is active in the meantime."
 msgstr ""
 
 #. translators: %s: Link to the Turnstile plugin.
-#: includes/class-gaic-plugin.php:161
+#: includes/class-gaic-plugin.php:170
 #, php-format
 msgid "Guzmandrade AI Chatbot is configured to use captcha but the <a href=\"%s\">Simple CAPTCHA with Cloudflare Turnstile</a> plugin is not active. Install and configure it, or disable captcha in the chatbot settings."
 msgstr ""
@@ -243,153 +264,157 @@ msgstr ""
 msgid "You are a helpful assistant for this website. Answer questions accurately and concisely. If you do not know the answer, say so. Use only the provided knowledge base context to answer questions about this site."
 msgstr ""
 
-#: includes/class-gaic-settings.php:126
+#: includes/class-gaic-settings.php:127
 msgid "Chatbot"
 msgstr ""
 
-#: includes/class-gaic-settings.php:133
+#: includes/class-gaic-settings.php:134
 msgid "Enable chatbot"
 msgstr ""
 
-#: includes/class-gaic-settings.php:145
+#: includes/class-gaic-settings.php:146
 msgid "Title"
 msgstr ""
 
-#: includes/class-gaic-settings.php:157
+#: includes/class-gaic-settings.php:158
 msgid "Subtitle"
 msgstr ""
 
-#: includes/class-gaic-settings.php:169
+#: includes/class-gaic-settings.php:170
 msgid "Welcome message"
 msgstr ""
 
-#: includes/class-gaic-settings.php:181
+#: includes/class-gaic-settings.php:182
 msgid "Position"
 msgstr ""
 
-#: includes/class-gaic-settings.php:189
+#: includes/class-gaic-settings.php:190
 msgid "Bottom right"
 msgstr ""
 
-#: includes/class-gaic-settings.php:190
+#: includes/class-gaic-settings.php:191
 msgid "Bottom left"
 msgstr ""
 
-#: includes/class-gaic-settings.php:197
+#: includes/class-gaic-settings.php:198
 msgid "Assistant avatar email"
 msgstr ""
 
-#: includes/class-gaic-settings.php:204
+#: includes/class-gaic-settings.php:205
 msgid "Shows the Gravatar for this email address next to assistant messages. If the email has no Gravatar, or the field is empty, your default avatar from Settings › Discussion is used — the same fallback as comment avatars."
 msgstr ""
 
-#: includes/class-gaic-settings.php:211
+#: includes/class-gaic-settings.php:212
 msgid "AI Configuration"
 msgstr ""
 
-#: includes/class-gaic-settings.php:218
+#: includes/class-gaic-settings.php:219
 msgid "System instructions"
 msgstr ""
 
-#: includes/class-gaic-settings.php:230
+#: includes/class-gaic-settings.php:231
 msgid "AI provider"
 msgstr ""
 
-#: includes/class-gaic-settings.php:242
+#: includes/class-gaic-settings.php:243
 msgid "Model (optional)"
 msgstr ""
 
-#: includes/class-gaic-settings.php:254
+#: includes/class-gaic-settings.php:255
 msgid "Temperature"
 msgstr ""
 
-#: includes/class-gaic-settings.php:269
+#: includes/class-gaic-settings.php:270
 msgid "Max tokens"
 msgstr ""
 
-#: includes/class-gaic-settings.php:292
+#: includes/class-gaic-settings.php:293
 msgid "Post types to include"
 msgstr ""
 
-#: includes/class-gaic-settings.php:303
+#: includes/class-gaic-settings.php:304
 msgid "Max context length (chars)"
 msgstr ""
 
 #: includes/class-gaic-settings.php:319
+msgid "Cite sources in responses"
+msgstr ""
+
+#: includes/class-gaic-settings.php:332
 msgid "Spam Protection"
 msgstr ""
 
-#: includes/class-gaic-settings.php:326
+#: includes/class-gaic-settings.php:339
 msgid "Enable spam protection"
 msgstr ""
 
-#: includes/class-gaic-settings.php:338
+#: includes/class-gaic-settings.php:351
 msgid "Rate limit (messages per hour per user)"
 msgstr ""
 
-#: includes/class-gaic-settings.php:354
+#: includes/class-gaic-settings.php:367
 msgid "Captcha Protection"
 msgstr ""
 
-#: includes/class-gaic-settings.php:361
+#: includes/class-gaic-settings.php:374
 msgid "Enable captcha"
 msgstr ""
 
-#: includes/class-gaic-settings.php:374
+#: includes/class-gaic-settings.php:387
 msgid "Lead Capture"
 msgstr ""
 
-#: includes/class-gaic-settings.php:381
+#: includes/class-gaic-settings.php:394
 msgid "Enable lead capture"
 msgstr ""
 
-#: includes/class-gaic-settings.php:393
+#: includes/class-gaic-settings.php:406
 msgid "Lead notification email"
 msgstr ""
 
-#: includes/class-gaic-settings.php:405
+#: includes/class-gaic-settings.php:418
 msgid "Webhook URL (optional)"
 msgstr ""
 
-#: includes/class-gaic-settings.php:469
+#: includes/class-gaic-settings.php:484
 msgid "Automatic (use any available)"
 msgstr ""
 
-#: includes/class-gaic-settings.php:511
+#: includes/class-gaic-settings.php:526
 msgid "You do not have permission to access this page."
 msgstr ""
 
-#: includes/class-gaic-settings.php:520
+#: includes/class-gaic-settings.php:535
 msgid "Save Settings"
 msgstr ""
 
-#: includes/class-gaic-settings.php:531
+#: includes/class-gaic-settings.php:546
 msgid "Configure how the chatbot appears on your site."
 msgstr ""
 
-#: includes/class-gaic-settings.php:538
+#: includes/class-gaic-settings.php:553
 msgid "AI providers and API keys are managed under Settings › Connectors (WordPress 7.0+). Select a provider and optionally a specific model here."
 msgstr ""
 
-#: includes/class-gaic-settings.php:545
+#: includes/class-gaic-settings.php:560
 msgid "Select which content types to include as context for the chatbot. Knowledge Base Articles are always available. The article content is where you write the information the chatbot should know."
 msgstr ""
 
-#: includes/class-gaic-settings.php:552
+#: includes/class-gaic-settings.php:567
 msgid "Uses Akismet for spam detection when available, with a rate-limiting fallback."
 msgstr ""
 
 #. translators: %s: Link to the Turnstile plugin.
-#: includes/class-gaic-settings.php:562
+#: includes/class-gaic-settings.php:577
 #, php-format
 msgid "Requires the <a href=\"%s\">Simple CAPTCHA with Cloudflare Turnstile</a> plugin. Configure your Cloudflare site key and secret in its settings (Settings › Cloudflare Turnstile) before enabling captcha here."
 msgstr ""
 
-#: includes/class-gaic-settings.php:573
+#: includes/class-gaic-settings.php:588
 msgid "When enabled, the chatbot uses AI function calling to detect when users share their contact information and automatically saves it. Leads are delivered via email and/or a webhook URL (for connecting to Zapier, Make, n8n, Google Sheets, a CRM, etc.). No forms or database tables needed."
 msgstr ""
 
-#: includes/class-gaic-settings.php:709
+#: includes/class-gaic-settings.php:724
 msgid "No AI providers found. Install a provider connector plugin and configure it under Settings › Connectors."
 msgstr ""
 

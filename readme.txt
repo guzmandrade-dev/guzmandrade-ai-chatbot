@@ -4,7 +4,7 @@ Tags: chatbot, ai, chat, spam, captcha
 Requires at least: 7.0
 Requires PHP: 8.0
 Tested up to: 7.1
-Stable tag: 1.1.1
+Stable tag: 1.2.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -16,8 +16,9 @@ Guzmandrade AI Chatbot adds an AI-powered chatbot to the frontend of your WordPr
 
 = Features =
 
-* **Frontend Chat Widget** — A floating chat button that opens a conversational panel. Place it site-wide or via shortcode.
+* **Frontend Chat Widget** — A floating chat button that opens a conversational panel. Place it site-wide or via shortcode. The conversation is stored in the browser (localStorage) and restored on page reload.
 * **Knowledge Base** — A custom post type (`gaic_article`) for curated content the chatbot can reference. The article content is where you write the information the chatbot should know. Optionally include standard posts and pages as context.
+* **Citations** — Answers cite the knowledge base sources they use. The AI references sources by number via a `cite_sources` function call, and the plugin turns those into clickable links to the internal post/page (plus a sources list under the message). Links are built server-side from permalinks, so only real internal URLs can be cited.
 * **Spam Protection** — Integrates with Akismet to detect and block spam messages. Falls back to rate-limiting when Akismet is not available.
 * **Captcha Protection** — Integrates with the Simple CAPTCHA with Cloudflare Turnstile plugin to verify human visitors before they can send messages.
 * **Lead Capture** — Uses AI function calling to detect when users share contact information in conversation and automatically saves leads. Delivers via email and/or webhook (connects to Zapier, Make, n8n, Google Sheets, CRMs). No forms or database tables needed.
@@ -68,6 +69,14 @@ Rate-limiting is used as a fallback. Each IP address can send a limited number o
 Captcha uses Cloudflare Turnstile via the "Simple CAPTCHA with Cloudflare Turnstile" plugin. After installing and configuring that plugin (Settings › Cloudflare Turnstile), enable captcha in the chatbot settings. A Turnstile challenge widget will appear in the chat panel before users can send their first message.
 
 == Changelog ==
+
+= 1.2.0 =
+* Maintenance release tested against the latest WordPress (7.1.4).
+* Added AGENTS.md with development and release-validation instructions (excluded from the distribution ZIP via .distignore).
+* Added optional citation references to responses (disabled by default — enable under Settings › Guzmandrade AI Chatbot › Knowledge Base): the AI cites numbered knowledge base sources via a `cite_sources` function call; citations render as clickable internal links plus a sources list under each answer.
+* The conversation is now persisted in the browser (localStorage) and restored after a page reload.
+* Fixed the sources label/avatar colors to derive from the theme's contrast token so they stay readable on light and dark themes.
+* Added a WordPress.org plugin icon (original robot design inspired by Gravatar's generated avatars) under `assets/`.
 
 = 1.1.1 =
 * Renamed the plugin from Just Another Generic Chatbot to Guzmandrade AI Chatbot.

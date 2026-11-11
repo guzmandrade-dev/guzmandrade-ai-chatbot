@@ -3,7 +3,7 @@
  * Plugin Name:       Guzmandrade AI Chatbot
  * Plugin URI:        https://github.com/guzmandrade-dev/guzmandrade-ai-chatbot
  * Description:       AI-powered frontend chatbot with a knowledge base, Akismet spam protection, and Cloudflare Turnstile captcha. Leverages the WordPress 7.0 Connectors API and the PHP AI Client SDK — no custom AI provider code required.
- * Version:           1.1.1
+ * Version:           1.2.0
  * Author:            Mauricio Andrade
  * Author URI:        https://profiles.wordpress.org/h4l9k/
  * License:           GPL-2.0-or-later
@@ -16,7 +16,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'GAIC_VERSION', '1.1.1' );
+define( 'GAIC_VERSION', '1.1.2' );
 define( 'GAIC_PLUGIN_FILE', __FILE__ );
 define( 'GAIC_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'GAIC_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
