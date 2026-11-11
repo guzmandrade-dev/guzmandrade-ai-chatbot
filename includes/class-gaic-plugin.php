@@ -55,6 +55,13 @@ final class GAIC_Plugin {
 	private ?GAIC_Lead_Capture $lead_capture = null;
 
 	/**
+	 * Citations module.
+	 *
+	 * @var ?GAIC_Citations
+	 */
+	private ?GAIC_Citations $citations = null;
+
+	/**
 	 * Chatbot module.
 	 *
 	 * @var ?GAIC_Chatbot
@@ -94,6 +101,7 @@ final class GAIC_Plugin {
 		require_once GAIC_PLUGIN_DIR . 'includes/class-gaic-spam.php';
 		require_once GAIC_PLUGIN_DIR . 'includes/class-gaic-captcha.php';
 		require_once GAIC_PLUGIN_DIR . 'includes/class-gaic-lead-capture.php';
+		require_once GAIC_PLUGIN_DIR . 'includes/class-gaic-citations.php';
 		require_once GAIC_PLUGIN_DIR . 'includes/class-gaic-chatbot.php';
 	}
 
@@ -106,7 +114,8 @@ final class GAIC_Plugin {
 		$this->spam           = new GAIC_Spam( $this->settings );
 		$this->captcha        = new GAIC_Captcha( $this->settings );
 		$this->lead_capture   = new GAIC_Lead_Capture( $this->settings );
-		$this->chatbot        = new GAIC_Chatbot( $this, $this->settings, $this->knowledge_base, $this->spam, $this->captcha, $this->lead_capture );
+		$this->citations      = new GAIC_Citations( $this->settings );
+		$this->chatbot        = new GAIC_Chatbot( $this, $this->settings, $this->knowledge_base, $this->spam, $this->captcha, $this->lead_capture, $this->citations );
 	}
 
 	/**
@@ -221,6 +230,15 @@ final class GAIC_Plugin {
 	 */
 	public function lead_capture(): GAIC_Lead_Capture {
 		return $this->lead_capture;
+	}
+
+	/**
+	 * Gets the citations module.
+	 *
+	 * @return GAIC_Citations
+	 */
+	public function citations(): GAIC_Citations {
+		return $this->citations;
 	}
 
 	// ── Activation / Deactivation ────────────────────────────────────

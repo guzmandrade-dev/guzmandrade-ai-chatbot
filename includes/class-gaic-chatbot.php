@@ -58,6 +58,13 @@ class GAIC_Chatbot {
 	private GAIC_Lead_Capture $lead_capture;
 
 	/**
+	 * Citations instance.
+	 *
+	 * @var GAIC_Citations
+	 */
+	private GAIC_Citations $citations;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param GAIC_Plugin         $plugin         Plugin instance.
@@ -66,6 +73,7 @@ class GAIC_Chatbot {
 	 * @param GAIC_Spam           $spam           Spam protection.
 	 * @param GAIC_Captcha        $captcha        Captcha protection.
 	 * @param GAIC_Lead_Capture   $lead_capture   Lead capture.
+	 * @param GAIC_Citations      $citations      Citations.
 	 */
 	public function __construct(
 		GAIC_Plugin $plugin,
@@ -73,7 +81,8 @@ class GAIC_Chatbot {
 		GAIC_Knowledge_Base $knowledge_base,
 		GAIC_Spam $spam,
 		GAIC_Captcha $captcha,
-		GAIC_Lead_Capture $lead_capture
+		GAIC_Lead_Capture $lead_capture,
+		GAIC_Citations $citations
 	) {
 		$this->plugin         = $plugin;
 		$this->settings       = $settings;
@@ -81,6 +90,7 @@ class GAIC_Chatbot {
 		$this->spam           = $spam;
 		$this->captcha        = $captcha;
 		$this->lead_capture   = $lead_capture;
+		$this->citations      = $citations;
 
 		add_action( 'init', array( $this, 'register_shortcode' ) );
 		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
@@ -208,6 +218,7 @@ class GAIC_Chatbot {
 				'aiUnavailable'   => __( 'The AI assistant is not configured. Please contact the site administrator.', 'guzmandrade-ai-chatbot' ),
 				'captchaRequired' => __( 'Please complete the captcha challenge first.', 'guzmandrade-ai-chatbot' ),
 				'captchaFailed'   => __( 'Captcha verification failed. Please try again.', 'guzmandrade-ai-chatbot' ),
+				'sources'         => __( 'Sources', 'guzmandrade-ai-chatbot' ),
 			),
 		);
 
@@ -378,10 +389,12 @@ class GAIC_Chatbot {
 		// __call() to delegate snake_case method names to the SDK's camelCase
 		// methods. We call the snake_case methods directly — method_exists()
 		// returns false for magic methods, so dynamic dispatch helpers don't work.
+		$sources = array();
 		try {
 			$system_prompt = (string) $this->settings->get( 'system_prompt', '' );
-			$context       = $this->knowledge_base->get_context( $message );
-			$full_system   = trim( $system_prompt . "\n\n" . $context );
+			$context_data  = $this->knowledge_base->get_context_with_sources( $message );
+			$sources       = $context_data['sources'];
+			$full_system   = trim( $system_prompt . "\n\n" . $context_data['context'] );
 
 			// Append lead capture instructions if enabled.
 			$lead_addition = $this->lead_capture->get_system_prompt_addition();
@@ -389,41 +402,36 @@ class GAIC_Chatbot {
 				$full_system .= $lead_addition;
 			}
 
+			// Append citation instructions if enabled and sources were included.
+			$citations_addition = $this->citations->get_system_prompt_addition( count( $sources ) );
+			if ( ! empty( $citations_addition ) ) {
+				$full_system .= $citations_addition;
+			}
+
 			$builder = wp_ai_client_prompt( $message );
-
-			// Apply provider selection if not "auto".
-			$provider = (string) $this->settings->get( 'ai_provider', 'auto' );
-			if ( ! empty( $provider ) && 'auto' !== $provider ) {
-				$builder = $builder->using_provider( $provider );
-			}
-
-			// Apply specific model if configured.
-			$model = (string) $this->settings->get( 'ai_model', '' );
-			if ( ! empty( $model ) && ! empty( $provider ) && 'auto' !== $provider ) {
-				$builder = $builder->using_model_preference( array( $provider, $model ) );
-			}
-
-			if ( ! empty( $full_system ) ) {
-				$builder = $builder->using_system_instruction( $full_system );
-			}
-
-			$temperature = (float) $this->settings->get( 'temperature', 0.3 );
-			$builder     = $builder->using_temperature( $temperature );
-
-			$max_tokens = (int) $this->settings->get( 'max_tokens', 1000 );
-			$builder    = $builder->using_max_tokens( $max_tokens );
+			$builder = $this->apply_ai_config( $builder, $full_system );
 
 			// Add conversation history if provided.
 			if ( ! empty( $history ) ) {
 				$builder = $this->add_history( $builder, $history );
 			}
 
-			// Register lead capture function declaration if enabled.
+			// Register function declarations (lead capture and/or citations).
+			$fn_declarations = array();
 			if ( $this->lead_capture->is_enabled() ) {
 				$fn_declaration = $this->lead_capture->get_function_declaration();
 				if ( $fn_declaration ) {
-					$builder = $builder->using_function_declarations( $fn_declaration );
+					$fn_declarations[] = $fn_declaration;
 				}
+			}
+			if ( ! empty( $sources ) ) {
+				$fn_declaration = $this->citations->get_function_declaration();
+				if ( $fn_declaration ) {
+					$fn_declarations[] = $fn_declaration;
+				}
+			}
+			if ( ! empty( $fn_declarations ) ) {
+				$builder = $builder->using_function_declarations( ...$fn_declarations );
 			}
 
 			/**
@@ -437,11 +445,13 @@ class GAIC_Chatbot {
 			 */
 			$builder = apply_filters( 'gaic_prompt_builder', $builder, $message, $this->settings );
 
-			// If lead capture is enabled, we need to use generate_text_result()
-			// to check for function calls. Otherwise we can use the simpler
-			// generate_text() directly.
-			if ( $this->lead_capture->is_enabled() ) {
-				$reply = $this->generate_with_function_calling( $builder );
+			// If any function declarations are registered (lead capture and/or
+			// citations), we need to use generate_text_result() to check for
+			// function calls. Otherwise we can use the simpler generate_text()
+			// directly.
+			$needs_function_calling = $this->lead_capture->is_enabled() || ( $this->citations->is_enabled() && ! empty( $sources ) );
+			if ( $needs_function_calling ) {
+				$reply = $this->generate_with_function_calling( $builder, $sources, $message, $history, $full_system );
 
 				// Check if the reply is an API error string (some providers
 				// return errors as text rather than WP_Error).
@@ -481,11 +491,16 @@ class GAIC_Chatbot {
 			$reply      = trim( $reply );
 		}
 
+		// Replace [n] citation markers with markdown links to the whitelisted
+		// sources and collect the used sources for the frontend.
+		$formatted = $this->citations->format_reply( $reply, $sources );
+
 		return rest_ensure_response(
 			array(
-				'reply'      => $reply,
+				'reply'      => $formatted['reply'],
 				'success'    => true,
 				'close_chat' => $close_chat,
+				'sources'    => $formatted['sources'],
 			)
 		);
 	}
@@ -499,14 +514,18 @@ class GAIC_Chatbot {
 	 *
 	 * The function call cycle happens entirely within a single request:
 	 * 1. First generate_text_result() — AI may return a function call
-	 * 2. We execute the function (save_lead)
+	 * 2. We execute the function (save_lead or cite_sources)
 	 * 3. We call with_function_response() and generate_text() again
 	 * 4. The AI produces a natural text response for the user
 	 *
-	 * @param mixed $builder The prompt builder.
+	 * @param mixed                                            $builder     The prompt builder.
+	 * @param array<int,array{id:int,title:string,url:string}> $sources    Whitelisted context sources for citations.
+	 * @param string                                           $message     The user's message.
+	 * @param array<int,array{role:string,content:string}>     $history     Conversation history.
+	 * @param string                                           $full_system The full system instruction.
 	 * @return string|WP_Error
 	 */
-	private function generate_with_function_calling( $builder ) {
+	private function generate_with_function_calling( $builder, array $sources, string $message, array $history, string $full_system ) {
 		$result = $builder->generate_text_result();
 
 		if ( is_wp_error( $result ) ) {
@@ -521,8 +540,23 @@ class GAIC_Chatbot {
 			return $result->toText();
 		}
 
-		// Execute the function call.
-		$function_response = $this->lead_capture->handle_function_call( $function_call );
+		// Keep the first-pass text around as a fallback in case the second
+		// generation fails after the function response.
+		$first_text = '';
+		try {
+			$first_text = (string) $result->toText();
+		} catch ( Throwable $e ) {
+			$first_text = '';
+		}
+
+		// Execute the function call — dispatch by name to the right module.
+		$function_name     = method_exists( $function_call, 'getName' ) ? $function_call->getName() : '';
+		$function_response = null;
+		if ( 'save_lead' === $function_name ) {
+			$function_response = $this->lead_capture->handle_function_call( $function_call );
+		} elseif ( 'cite_sources' === $function_name ) {
+			$function_response = $this->citations->handle_function_call( $function_call, $sources );
+		}
 
 		if ( null === $function_response ) {
 			// Could not handle the function call — return whatever text we got.
@@ -533,29 +567,87 @@ class GAIC_Chatbot {
 			}
 		}
 
-		// Feed the function response back and generate again.
-		// The builder is mutable — with_function_response() appends the
-		// function response as a new message part. The next generate_text()
-		// will see the AI's function call + our response and produce a
-		// natural language reply.
-		$builder = $builder->with_function_response( $function_response );
+		// Feed the function response back and generate again. Some providers
+		// (e.g. Ollama/GLM) reject a function response that shares a message
+		// with other content, so the second request is rebuilt with the
+		// proper message order: user text → history → model function call →
+		// user message containing only the function response.
+		$rebuilt = null;
+		if ( class_exists( 'WordPress\AiClient\Messages\DTO\Message' ) ) {
+			try {
+				$message_class = 'WordPress\AiClient\Messages\DTO\Message';
+
+				$user_msg = $message_class::fromArray(
+					array(
+						'role'  => 'user',
+						'parts' => array(
+							array(
+								'type' => 'text',
+								'text' => $message,
+							),
+						),
+					)
+				);
+
+				$call_msg = $message_class::fromArray(
+					array(
+						'role'  => 'model',
+						'parts' => array(
+							array(
+								'functionCall' => array(
+									'id'   => $function_call->getId(),
+									'name' => $function_call->getName(),
+									'args' => $function_call->getArgs(),
+								),
+							),
+						),
+					)
+				);
+
+				$rebuilt  = wp_ai_client_prompt();
+				$rebuilt  = $this->apply_ai_config( $rebuilt, $full_system );
+				$messages = array_merge(
+					array( $user_msg ),
+					$this->history_to_messages( $history ),
+					array( $call_msg )
+				);
+				$rebuilt  = $rebuilt->with_history( ...$messages );
+				// Last message is the model function call, so this appends a
+				// new user message containing only the function response.
+				$rebuilt = $rebuilt->with_function_response( $function_response );
+			} catch ( Throwable $e ) {
+				$rebuilt = null;
+			}//end try
+		}//end if
+
+		if ( null === $rebuilt ) {
+			// Fallback for SDKs without message DTO support: append the
+			// function response to the existing builder.
+			$rebuilt = $builder->with_function_response( $function_response );
+		}
 
 		/**
 		 * Filters the prompt builder after a function call response.
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param WP_AI_Client_Prompt_Builder $builder The prompt builder.
+		 * @param WP_AI_Client_Prompt_Builder $rebuilt The prompt builder.
 		 */
-		$builder = apply_filters( 'gaic_after_function_call', $builder );
+		$rebuilt = apply_filters( 'gaic_after_function_call', $rebuilt );
 
-		$final_text = $builder->generate_text();
+		$final_text = $rebuilt->generate_text();
 
 		// The second generation might return an error string (not WP_Error)
 		// from the API if it rejects the function response format. Detect
-		// known API error strings and provide a graceful fallback.
+		// known API error strings and provide a graceful fallback: for
+		// save_lead the lead confirmation, for other functions (citations)
+		// the model's first-pass text.
+		$fallback = 'save_lead' === $function_name
+			? __( 'I\'ve saved your information. Is there anything else I can help you with?', 'guzmandrade-ai-chatbot' )
+			: $first_text;
+
 		if ( is_wp_error( $final_text ) ) {
-			return __( 'I\'ve saved your information. Is there anything else I can help you with?', 'guzmandrade-ai-chatbot' );
+			return $fallback;
 		}
 
 		// Some providers return error messages as plain strings instead
@@ -566,7 +658,7 @@ class GAIC_Chatbot {
 			|| false !== stripos( $final_text, 'function response' )
 			|| ( false !== stripos( $final_text, 'invalid' ) && strlen( $final_text ) < 200 && stripos( $final_text, 'error' ) )
 		) {
-			return __( 'I\'ve saved your information. Is there anything else I can help you with?', 'guzmandrade-ai-chatbot' );
+			return $fallback;
 		}
 
 		return $final_text;
@@ -624,9 +716,25 @@ class GAIC_Chatbot {
 	 * @return WP_AI_Client_Prompt_Builder Modified builder.
 	 */
 	private function add_history( $builder, array $history ) {
+		$messages = $this->history_to_messages( $history );
+
+		if ( ! empty( $messages ) ) {
+			$builder = $builder->with_history( ...$messages );
+		}
+
+		return $builder;
+	}
+
+	/**
+	 * Converts sanitized history entries into SDK Message DTOs.
+	 *
+	 * @param array<int,array{role:string,content:string}> $history Conversation history.
+	 * @return array<int,\WordPress\AiClient\Messages\DTO\Message> Message DTOs.
+	 */
+	private function history_to_messages( array $history ): array {
 		// The SDK's Message class may not be loaded in all environments.
 		if ( ! class_exists( 'WordPress\AiClient\Messages\DTO\Message' ) ) {
-			return $builder;
+			return array();
 		}
 
 		$message_class = 'WordPress\AiClient\Messages\DTO\Message';
@@ -661,9 +769,39 @@ class GAIC_Chatbot {
 			}
 		}//end foreach
 
-		if ( ! empty( $messages ) ) {
-			$builder = $builder->with_history( ...$messages );
+		return $messages;
+	}
+
+	/**
+	 * Applies the common AI configuration (provider, model, system
+	 * instruction, temperature, max tokens) to a prompt builder.
+	 *
+	 * @param WP_AI_Client_Prompt_Builder $builder     The prompt builder.
+	 * @param string                      $full_system The full system instruction.
+	 * @return WP_AI_Client_Prompt_Builder Modified builder.
+	 */
+	private function apply_ai_config( $builder, string $full_system ) {
+		// Apply provider selection if not "auto".
+		$provider = (string) $this->settings->get( 'ai_provider', 'auto' );
+		if ( ! empty( $provider ) && 'auto' !== $provider ) {
+			$builder = $builder->using_provider( $provider );
 		}
+
+		// Apply specific model if configured.
+		$model = (string) $this->settings->get( 'ai_model', '' );
+		if ( ! empty( $model ) && ! empty( $provider ) && 'auto' !== $provider ) {
+			$builder = $builder->using_model_preference( array( $provider, $model ) );
+		}
+
+		if ( ! empty( $full_system ) ) {
+			$builder = $builder->using_system_instruction( $full_system );
+		}
+
+		$temperature = (float) $this->settings->get( 'temperature', 0.3 );
+		$builder     = $builder->using_temperature( $temperature );
+
+		$max_tokens = (int) $this->settings->get( 'max_tokens', 1000 );
+		$builder    = $builder->using_max_tokens( $max_tokens );
 
 		return $builder;
 	}

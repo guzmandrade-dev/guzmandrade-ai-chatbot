@@ -201,7 +201,7 @@
 		return avatar;
 	}
 
-	function addMessage( role, content, storeInState ) {
+	function addMessage( role, content, storeInState, sources ) {
 		var msg       = document.createElement( 'div' );
 		msg.className = 'gaic-message gaic-message--' + role;
 
@@ -215,6 +215,34 @@
 		text.innerHTML = formatMessage( content );
 
 		bubble.appendChild( text );
+
+		// Render the cited sources list under the message, when present.
+		if ( role === 'assistant' && Array.isArray( sources ) && sources.length ) {
+			var sourcesEl       = document.createElement( 'div' );
+			sourcesEl.className = 'gaic-message-sources';
+
+			var label         = document.createElement( 'span' );
+			label.className   = 'gaic-message-sources-label';
+			label.textContent = ( strings.sources || 'Sources' ) + ':';
+			sourcesEl.appendChild( label );
+
+			sources.forEach(
+				function ( source, i ) {
+					var link         = document.createElement( 'a' );
+					link.href        = source.url;
+					link.target      = '_blank';
+					link.rel         = 'noopener noreferrer';
+					link.textContent = '[' + source.id + '] ' + source.title;
+					sourcesEl.appendChild( link );
+					if ( i < sources.length - 1 ) {
+							sourcesEl.appendChild( document.createTextNode( ' · ' ) );
+					}
+				}
+			);
+
+			bubble.appendChild( sourcesEl );
+		}//end if
+
 		msg.appendChild( avatar );
 		msg.appendChild( bubble );
 
@@ -225,7 +253,12 @@
 		// messages like the welcome greeting that shouldn't be sent
 		// as conversation history to the AI API.
 		if ( storeInState !== false ) {
-			state.messages.push( { role: role, content: content } );
+			var entry = { role: role, content: content };
+			if ( Array.isArray( sources ) && sources.length ) {
+				entry.sources = sources;
+			}
+			state.messages.push( entry );
+			saveHistory();
 		}
 	}
 
@@ -333,7 +366,7 @@
 					removeTyping( typingEl );
 
 					if ( result.ok && result.json.reply ) {
-							addMessage( 'assistant', result.json.reply );
+							addMessage( 'assistant', result.json.reply, true, result.json.sources );
 
 							// If the AI signaled conversation end, close after a delay.
 						if ( result.json.close_chat ) {

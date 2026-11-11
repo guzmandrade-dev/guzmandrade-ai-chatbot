@@ -249,6 +249,24 @@
 	text-decoration: underline;
 }
 
+.gaic-message-sources {
+	margin-top: 0.5rem;
+	padding-top: 0.5rem;
+	border-top: 1px solid color-mix(in srgb, var(--gaic-text) 15%, transparent);
+	font-size: 0.8em;
+	color: var(--gaic-text-muted);
+}
+
+.gaic-message-sources-label {
+	font-weight: 600;
+	margin-right: 0.25rem;
+}
+
+.gaic-message-sources a {
+	color: var(--gaic-primary);
+	text-decoration: underline;
+}
+
 /* ── Captcha ────────────────────────────────────────────────────── */
 
 .gaic-chat-captcha {

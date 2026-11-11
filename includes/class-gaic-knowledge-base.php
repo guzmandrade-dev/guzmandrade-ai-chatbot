@@ -71,30 +71,47 @@ class GAIC_Knowledge_Base {
 	/**
 	 * Retrieves relevant context from the knowledge base for a given user message.
 	 *
-	 * Uses a simple keyword-matching approach: extracts significant words from the
-	 * user's message and queries posts that contain them. For small knowledge bases,
-	 * all entries are included.
-	 *
 	 * @param string $message The user's chat message.
 	 * @return string Formatted context string for the system prompt.
 	 */
 	public function get_context( string $message ): string {
+		$data = $this->get_context_with_sources( $message );
+		return $data['context'];
+	}
+
+	/**
+	 * Retrieves relevant context plus the numbered source list for citations.
+	 *
+	 * Uses a simple keyword-matching approach: extracts significant words from the
+	 * user's message and queries posts that contain them. For small knowledge bases,
+	 * all entries are included. Every entry is numbered ([1], [2], …) so the AI
+	 * can cite it, and the matching source list (id, title, permalink) is returned
+	 * alongside the context string.
+	 *
+	 * @param string $message The user's chat message.
+	 * @return array{context:string, sources:array<int,array{id:int,title:string,url:string}>}
+	 */
+	public function get_context_with_sources( string $message ): array {
 		$types       = (array) $this->settings->get( 'kb_post_types', array( 'gaic_article' ) );
 		$max_length  = (int) $this->settings->get( 'max_context_length', 4000 );
 		$context     = '';
+		$sources     = array();
 		$used_length = 0;
+		$next_id     = 1;
 
 		// Always include KB articles first.
 		$articles = $this->query_relevant_posts( $message, array( 'gaic_article' ), 5 );
 		if ( ! empty( $articles ) ) {
 			$context .= "## Knowledge Base Articles\n\n";
 			foreach ( $articles as $post ) {
-				$entry = $this->format_post_as_context( $post );
-				if ( $used_length + strlen( $entry ) > $max_length ) {
+				$formatted = $this->format_post_as_context( $post, $next_id );
+				if ( $used_length + strlen( $formatted['entry'] ) > $max_length ) {
 					break;
 				}
-				$context     .= $entry . "\n\n";
-				$used_length += strlen( $entry );
+				$context            .= $formatted['entry'] . "\n\n";
+				$used_length        += strlen( $formatted['entry'] );
+				$sources[ $next_id ] = $formatted['source'];
+				++$next_id;
 			}
 		}
 
@@ -105,21 +122,29 @@ class GAIC_Knowledge_Base {
 			if ( ! empty( $posts ) ) {
 				$context .= "## Site Content\n\n";
 				foreach ( $posts as $post ) {
-					$entry = $this->format_post_as_context( $post );
-					if ( $used_length + strlen( $entry ) > $max_length ) {
+					$formatted = $this->format_post_as_context( $post, $next_id );
+					if ( $used_length + strlen( $formatted['entry'] ) > $max_length ) {
 						break;
 					}
-					$context     .= $entry . "\n\n";
-					$used_length += strlen( $entry );
+					$context            .= $formatted['entry'] . "\n\n";
+					$used_length        += strlen( $formatted['entry'] );
+					$sources[ $next_id ] = $formatted['source'];
+					++$next_id;
 				}
 			}
 		}
 
 		if ( empty( trim( $context ) ) ) {
-			return '';
+			return array(
+				'context' => '',
+				'sources' => array(),
+			);
 		}
 
-		return "Use the following context from the knowledge base to answer the user's question. If the context does not contain relevant information, say you don't have that information.\n\n" . $context;
+		return array(
+			'context' => "Use the following context from the knowledge base to answer the user's question. If the context does not contain relevant information, say you don't have that information. Each source is numbered ([1], [2], …) — cite sources by number.\n\n" . $context,
+			'sources' => $sources,
+		);
 	}
 
 	/**
@@ -213,13 +238,15 @@ class GAIC_Knowledge_Base {
 	/**
 	 * Formats a post as context text for the AI system prompt.
 	 *
-	 * The post title becomes the heading and the post content is included
-	 * as the knowledge the AI should reference.
+	 * The post title becomes the heading, prefixed with its citation number,
+	 * and the post content is included as the knowledge the AI should reference.
+	 * The source list is appended to $sources by reference.
 	 *
 	 * @param WP_Post $post Post object.
-	 * @return string
+	 * @param int     $id   Citation number for this source.
+	 * @return array{entry:string, source:array{id:int,title:string,url:string}}
 	 */
-	private function format_post_as_context( WP_Post $post ): string {
+	private function format_post_as_context( WP_Post $post, int $id ): array {
 		$content = wp_strip_all_tags( apply_filters( 'gaic_article_content', $post->post_content ) );
 		// Truncate individual entries to keep total context manageable.
 		$max_entry = 2000;
@@ -227,12 +254,21 @@ class GAIC_Knowledge_Base {
 			$content = substr( $content, 0, $max_entry ) . '…';
 		}
 
-		$source = get_permalink( $post );
-		return sprintf(
-			"### %s\nSource: %s\n%s",
-			$post->post_title,
-			$source ? $source : '',
-			$content
+		$url = get_permalink( $post );
+
+		return array(
+			'entry'  => sprintf(
+				"### [%d] %s\nSource: %s\n%s",
+				$id,
+				$post->post_title,
+				$url ? $url : '',
+				$content
+			),
+			'source' => array(
+				'id'    => $id,
+				'title' => $post->post_title,
+				'url'   => $url ? $url : '',
+			),
 		);
 	}
 }

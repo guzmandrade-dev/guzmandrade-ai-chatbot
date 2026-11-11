@@ -46,6 +46,7 @@ class GAIC_Settings {
 			'system_prompt'        => __( 'You are a helpful assistant for this website. Answer questions accurately and concisely. If you do not know the answer, say so. Use only the provided knowledge base context to answer questions about this site.', 'guzmandrade-ai-chatbot' ),
 			'max_context_length'   => 4000,
 			'kb_post_types'        => array( 'gaic_article', 'post', 'page' ),
+			'citations_enabled'    => false,
 			'spam_protection'      => true,
 			'rate_limit'           => 10,
 			'max_tokens'           => 1000,
@@ -313,6 +314,18 @@ class GAIC_Settings {
 			)
 		);
 
+		add_settings_field(
+			'citations_enabled',
+			__( 'Cite sources in responses', 'guzmandrade-ai-chatbot' ),
+			array( $this, 'render_checkbox' ),
+			'guzmandrade-ai-chatbot',
+			'gaic_kb',
+			array(
+				'label_for' => 'gaic_citations_enabled',
+				'key'       => 'citations_enabled',
+			)
+		);
+
 		// Spam section.
 		add_settings_section(
 			'gaic_spam',
@@ -455,6 +468,8 @@ class GAIC_Settings {
 		if ( empty( $clean['kb_post_types'] ) ) {
 			$clean['kb_post_types'] = array( 'gaic_article' );
 		}
+
+		$clean['citations_enabled'] = ! empty( $input['citations_enabled'] );
 
 		return $clean;
 	}
