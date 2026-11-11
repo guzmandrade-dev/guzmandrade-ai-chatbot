@@ -1,4 +1,7 @@
 {
     "$schema": "https://schemas.wp.org/trunk/wp-env.json",
-    "testsEnvironment": false
+    "testsEnvironment": false,
+    "plugins": [
+        "https://downloads.wordpress.org/plugin/plugin-check.2.2.0.zip"
+    ]
 }
