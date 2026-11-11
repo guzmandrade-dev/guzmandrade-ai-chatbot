@@ -26,11 +26,67 @@
 	var captchaWidgetId = null;
 	var captchaReady    = false;
 
+	var STORAGE_KEY = 'gaic-chat-history-v1';
+
 	var state = {
 		isOpen: false,
 		isTyping: false,
-		messages: [],
+		messages: loadHistory(),
 	};
+
+	// ── History persistence (localStorage) ──────────────────────────
+
+	// Restores a previously stored conversation. Entries are validated so
+	// tampered storage cannot inject markup (rendering escapes everything
+	// anyway) or off-site citation links.
+	function loadHistory() {
+		try {
+			var raw = window.localStorage.getItem( STORAGE_KEY );
+			if ( ! raw ) {
+				return [];
+			}
+			var parsed = JSON.parse( raw );
+			if ( ! Array.isArray( parsed ) ) {
+				return [];
+			}
+			var clean = [];
+			parsed.forEach(
+				function ( m ) {
+					if ( ! m || ( m.role !== 'user' && m.role !== 'assistant' ) || typeof m.content !== 'string' || ! m.content.trim() ) {
+							return;
+					}
+					var entry = { role: m.role, content: m.content.slice( 0, 4000 ) };
+					if ( Array.isArray( m.sources ) ) {
+						entry.sources = m.sources.filter(
+							function ( s ) {
+								return s && Number.isInteger( s.id ) && typeof s.title === 'string' && typeof s.url === 'string' &&
+								/^https?:\/\//i.test( s.url ) && new URL( s.url, window.location.origin ).origin === window.location.origin;
+							}
+						).slice( 0, 10 ).map(
+							function ( s ) {
+								return { id: s.id, title: String( s.title ).slice( 0, 200 ), url: s.url };
+							}
+						);
+						if ( ! entry.sources.length ) {
+								delete entry.sources;
+						}
+					}
+					clean.push( entry );
+				}
+			);
+			return clean.slice( -20 );
+		} catch ( e ) {
+			return [];
+		}//end try
+	}
+
+	function saveHistory() {
+		try {
+			window.localStorage.setItem( STORAGE_KEY, JSON.stringify( state.messages.slice( -20 ) ) );
+		} catch ( e ) {
+			// Storage unavailable (private mode, quota) — chat still works for the session.
+		}
+	}
 
 	// ── DOM construction ────────────────────────────────────────────
 
@@ -312,9 +368,14 @@
 
 		// Capture history before adding the current user message, so the
 		// current message isn't duplicated in both `message` and `history`.
+		// Only role/content are sent to the API — stored sources are for display.
 		var history = state.messages.slice( -10 ).filter(
 			function ( m ) {
 				return m.role === 'user' || m.role === 'assistant';
+			}
+		).map(
+			function ( m ) {
+				return { role: m.role, content: m.content };
 			}
 		);
 
@@ -494,6 +555,13 @@
 
 	container.appendChild( toggleBtn );
 	container.appendChild( elements.panel );
+
+	// Re-render the persisted conversation (display-only; already stored).
+	state.messages.forEach(
+		function ( m ) {
+			addMessage( m.role, m.content, false, m.sources );
+		}
+	);
 
 	// Event listeners.
 	toggleBtn.addEventListener(
