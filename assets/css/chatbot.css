@@ -20,7 +20,10 @@
 
 	/* Text colors. */
 	--gaic-text: var(--wp--preset--color--contrast, #1b1b1b);
-	--gaic-text-muted: var(--wp--preset--color--base, #71767a);
+	/* Muted text derives from the theme's contrast (text) color, not from
+	 * "base" — base is the theme's background color, which is white on
+	 * light themes and would make muted text invisible on light surfaces. */
+	--gaic-text-muted: color-mix(in srgb, var(--wp--preset--color--contrast, #1b1b1b) 62%, transparent);
 
 	/* Borders. */
 	--gaic-border: var(--wp--preset--color--base-lighter, #dfe1e2);
@@ -226,6 +229,9 @@
 
 .gaic-message--user .gaic-message-avatar {
 	background-color: var(--gaic-text-muted);
+	/* Text uses the theme's base (background) color so the letter stays
+	 * readable on both light and dark themes. */
+	color: var(--wp--preset--color--base, #fff);
 }
 
 .gaic-message-bubble {
