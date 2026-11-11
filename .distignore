@@ -35,3 +35,9 @@ blueprint.json
 vendor
 dist
 .gitattributes
+
+# WordPress.org repository assets (synced to the SVN /assets directory,
+# not shipped inside the plugin ZIP).
+assets/icon.svg
+assets/icon-128x128.png
+assets/icon-256x256.png
